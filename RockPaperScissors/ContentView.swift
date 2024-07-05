@@ -11,12 +11,11 @@ struct MoveSymbol: View {
     var number: Int
     var moves: [String]
     var symbols: [String]
-//    var action: (Int) -> Void
+    var action: (Int) -> Void
     
     var body: some View {
         Button {
-//            action(number)
-            print("hi")
+            action(number)
         } label: {
             Text("\(symbols[number])")
                 .font(.system(size: 50))
@@ -24,6 +23,7 @@ struct MoveSymbol: View {
         .frame(minWidth: 75, minHeight: 75)
         .background(Color(red: 0.4, green: 0.3, blue: 0.9))
         .clipShape(/*@START_MENU_TOKEN@*/Circle()/*@END_MENU_TOKEN@*/)
+        .shadow(radius: 10)
     }
 }
 
@@ -33,14 +33,15 @@ struct ContentView: View {
     private let winningMoves: [String] = ["Paper", "Scissors", "Rock"]
     private let losingMoves: [String] = ["Scissors", "Rock", "Paper"]
     
-    private var userMove: Int = 0
-    private var computerMove: Int = Int.random(in: 0...2)
+    @State private var computerMove: Int = Int.random(in: 0...2)
     
-    private var promptToWin: Bool = Bool.random()
+    @State private var promptToWin: Bool = Bool.random()
     
-    @State var Score: Int = 0
+    @State private var score: Int = 0
     private let maxQuestions = 10
     @State private var currentQuestion = 1
+    
+    @State private var showingGameFinished = false
     
     var body: some View {
         ZStack {
@@ -48,6 +49,7 @@ struct ContentView: View {
                 Color(red: 0.8, green: 0.4, blue: 0.8),
                 Color(red:0.9, green: 0.2, blue: 0.2)
             ], startPoint: .top, endPoint: .bottom)
+            .ignoresSafeArea()
             
             VStack {
                 Spacer()
@@ -63,7 +65,9 @@ struct ContentView: View {
                     
                     Text("Computer move: \(moves[computerMove])")
                     Text("\(symbols[computerMove])")
-                        .font(.system(size: 100))                }
+                        .font(.system(size: 100))       
+                        .shadow(radius: 20)
+                }
                 Spacer()
                 
                 Text("Choose your move!")
@@ -71,23 +75,48 @@ struct ContentView: View {
                 
                 HStack(spacing: 15) {
                     ForEach(0..<3){ number in
-                        MoveSymbol(number: number, moves: moves, symbols: symbols)
+                        MoveSymbol(number: number, moves: moves, symbols: symbols, action: buttonTapped)
                     }
                 }.padding(10)
                 
-                
-                
-                
                 Spacer()
+                Text("Score: \(score)")
                 Spacer()
             }
-
-            
-        }.ignoresSafeArea()
+        }
+        .alert("You Finished!",isPresented: $showingGameFinished) {
+            Button("Play Again?", action: resetGame)
+        } message: {
+            Text("Your score is \(score)")
+        }
     }
     
     func buttonTapped(_ number: Int) {
         
+        let targetMoves = promptToWin ? winningMoves : losingMoves
+        
+        if computerMove == targetMoves.firstIndex(of: moves[number]) {
+            score += 1
+        }
+        
+        if currentQuestion == maxQuestions {
+            showingGameFinished = true
+        } else {
+            loadNextTurn()
+        }
+    }
+    
+    func loadNextTurn() {
+        promptToWin.toggle()
+        currentQuestion += 1
+        computerMove = Int.random(in: 0...2)
+    }
+    
+    func resetGame() {
+        promptToWin = Bool.random()
+        currentQuestion = 1
+        computerMove = Int.random(in: 0...2)
+        score = 0
     }
 }
 
